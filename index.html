@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase GitHub Auth</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f7f6;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #24292e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #444;
+    }
+    #user-info {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #user-info img {
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Авторизация в приложении</h1>
+  
+  <!-- Кнопка для входа -->
+  <button id="login-btn">Войти через GitHub</button>
+  
+  <!-- Сюда выведем данные пользователя после входа -->
+  <div id="user-info"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+    import { getAuth, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbVnDnPSOU2hSy7V_sF2f_mwXa8CwQ2gk",
+      authDomain: "project-2-db609.firebaseapp.com",
+      projectId: "project-2-db609",
+      storageBucket: "project-2-db609.firebasestorage.app",
+      messagingSenderId: "129341680436",
+      appId: "1:129341680436:web:33ac69eab66851de1c9361",
+      measurementId: "G-EZ0966QSWS"
+    };
+  
+    // Инициализация Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const provider = new GithubAuthProvider();
+  
+    const loginBtn = document.getElementById('login-btn');
+    const userInfoDiv = document.getElementById('user-info');
+
+    async function loginWithGithub() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+  
+        // Выводим имя и аватар пользователя на экран [1]
+        userInfoDiv.innerHTML = `
+          <img src="${user.photoURL}" alt="Аватар">
+          <h2>Привет, ${user.displayName || 'Пользователь'}!</h2>
+          <p>Email: ${user.email || 'скрыт или не указан'}</p>
+        `;
+      } catch (error) {
+        console.error("Ошибка при входе:", error.code, error.message);
+        userInfoDiv.innerHTML = `<p style="color: red;">Ошибка входа: ${error.message}</p>`;
+      }
+    }
+  
+    // Привязываем клик по кнопке к функции авторизации [1]
+    loginBtn.addEventListener('click', loginWithGithub);
+  </script>
+</body>
+</html>
