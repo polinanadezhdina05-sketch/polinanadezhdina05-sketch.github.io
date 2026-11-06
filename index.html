@@ -18,15 +18,26 @@
     button {
       padding: 12px 24px;
       font-size: 16px;
-      background-color: #24292e;
-      color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      margin: 5px;
     }
-    button:hover {
+    #login-btn {
+      background-color: #24292e;
+      color: white;
+    }
+    #login-btn:hover {
       background-color: #444;
+    }
+    #logout-btn {
+      background-color: #d9534f;
+      color: white;
+      display: none; /* Скрыта по умолчанию */
+    }
+    #logout-btn:hover {
+      background-color: #c9302c;
     }
     #user-info {
       margin-top: 20px;
@@ -44,16 +55,17 @@
 
   <h1>Авторизация в приложении</h1>
   
-  <!-- Кнопка для входа -->
+  <!-- Кнопки входа и выхода -->
   <button id="login-btn">Войти через GitHub</button>
+  <button id="logout-btn">Выйти из аккаунта</button>
   
-  <!-- Сюда выведем данные пользователя после входа -->
+  <!-- Сюда выводим данные пользователя -->
   <div id="user-info"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
-    import { getAuth, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+    import { getAuth, signInWithPopup, GithubAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
   
     const firebaseConfig = {
       apiKey: "AIzaSyDbVnDnPSOU2hSy7V_sF2f_mwXa8CwQ2gk",
@@ -72,27 +84,50 @@
     const provider = new GithubAuthProvider();
   
     const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
     const userInfoDiv = document.getElementById('user-info');
 
-    async function loginWithGithub() {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-  
-        // Выводим имя и аватар пользователя на экран [1]
+    // Слушатель состояния авторизации
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Если пользователь вошел, показываем его профиль и кнопку «Выйти»
         userInfoDiv.innerHTML = `
           <img src="${user.photoURL}" alt="Аватар">
           <h2>Привет, ${user.displayName || 'Пользователь'}!</h2>
           <p>Email: ${user.email || 'скрыт или не указан'}</p>
         `;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+      } else {
+        // Если пользователь вышел, очищаем профиль и показываем кнопку «Войти»
+        userInfoDiv.innerHTML = '';
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+      }
+    });
+
+    // Функция входа
+    async function loginWithGithub() {
+      try {
+        await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("Ошибка при входе:", error.code, error.message);
         userInfoDiv.innerHTML = `<p style="color: red;">Ошибка входа: ${error.message}</p>`;
       }
     }
+
+    // Функция выхода
+    async function logout() {
+      try {
+        await signOut(auth); // Разлогиниваем пользователя в Firebase
+      } catch (error) {
+        console.error("Ошибка при выходе:", error.code, error.message);
+      }
+    }
   
-    // Привязываем клик по кнопке к функции авторизации [1]
+    // Привязываем обработчики событий
     loginBtn.addEventListener('click', loginWithGithub);
+    logoutBtn.addEventListener('click', logout);
   </script>
 </body>
 </html>
