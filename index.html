@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase GitHub Auth</title>
+  <title>Firebase Auth (GitHub & Google)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -23,13 +23,21 @@
       cursor: pointer;
       font-weight: bold;
       margin: 5px;
+      transition: background-color 0.2s;
     }
-    #login-btn {
+    #github-login-btn {
       background-color: #24292e;
       color: white;
     }
-    #login-btn:hover {
+    #github-login-btn:hover {
       background-color: #444;
+    }
+    #google-login-btn {
+      background-color: #4285F4;
+      color: white;
+    }
+    #google-login-btn:hover {
+      background-color: #357ae8;
     }
     #logout-btn {
       background-color: #d9534f;
@@ -49,6 +57,10 @@
       height: 80px;
       margin-bottom: 10px;
     }
+    .btn-container {
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
@@ -56,16 +68,26 @@
   <h1>Авторизация в приложении</h1>
   
   <!-- Кнопки входа и выхода -->
-  <button id="login-btn">Войти через GitHub</button>
+  <div class="btn-container">
+    <button id="github-login-btn">Войти через GitHub</button>
+    <button id="google-login-btn">Войти через Google</button>
+  </div>
   <button id="logout-btn">Выйти из аккаунта</button>
   
-  <!-- Сюда выводим данные пользователя -->
+  <!-- Данные пользователя -->
   <div id="user-info"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
-    import { getAuth, signInWithPopup, GithubAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+    import { 
+      getAuth, 
+      signInWithPopup, 
+      GithubAuthProvider, 
+      GoogleAuthProvider, // Добавлен импорт GoogleAuthProvider
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
   
     const firebaseConfig = {
       apiKey: "AIzaSyDbVnDnPSOU2hSy7V_sF2f_mwXa8CwQ2gk",
@@ -77,56 +99,65 @@
       measurementId: "G-EZ0966QSWS"
     };
   
-    // Инициализация Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const auth = getAuth(app);
-    const provider = new GithubAuthProvider();
+    
+    // Инициализация провайдеров
+    const githubProvider = new GithubAuthProvider();
+    const googleProvider = new GoogleAuthProvider(); // Инициализация Google [2.1]
   
-    const loginBtn = document.getElementById('login-btn');
+    const githubLoginBtn = document.getElementById('github-login-btn');
+    const googleLoginBtn = document.getElementById('google-login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userInfoDiv = document.getElementById('user-info');
 
-    // Слушатель состояния авторизации
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Если пользователь вошел, показываем его профиль и кнопку «Выйти»
         userInfoDiv.innerHTML = `
           <img src="${user.photoURL}" alt="Аватар">
           <h2>Привет, ${user.displayName || 'Пользователь'}!</h2>
           <p>Email: ${user.email || 'скрыт или не указан'}</p>
         `;
-        loginBtn.style.display = 'none';
+        githubLoginBtn.style.display = 'none';
+        googleLoginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-block';
       } else {
-        // Если пользователь вышел, очищаем профиль и показываем кнопку «Войти»
         userInfoDiv.innerHTML = '';
-        loginBtn.style.display = 'inline-block';
+        githubLoginBtn.style.display = 'inline-block';
+        googleLoginBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'none';
       }
     });
 
-    // Функция входа
     async function loginWithGithub() {
       try {
-        await signInWithPopup(auth, provider);
+        await signInWithPopup(auth, githubProvider);
       } catch (error) {
-        console.error("Ошибка при входе:", error.code, error.message);
-        userInfoDiv.innerHTML = `<p style="color: red;">Ошибка входа: ${error.message}</p>`;
+        console.error("Ошибка GitHub:", error.code, error.message);
+        userInfoDiv.innerHTML = `<p style="color: red;">Ошибка: ${error.message}</p>`;
       }
     }
 
-    // Функция выхода
+    async function loginWithGoogle() {
+      try {
+        await signInWithPopup(auth, googleProvider); // Вход через Google [2.1]
+      } catch (error) {
+        console.error("Ошибка Google:", error.code, error.message);
+        userInfoDiv.innerHTML = `<p style="color: red;">Ошибка: ${error.message}</p>`;
+      }
+    }
+
     async function logout() {
       try {
-        await signOut(auth); // Разлогиниваем пользователя в Firebase
+        await signOut(auth);
       } catch (error) {
         console.error("Ошибка при выходе:", error.code, error.message);
       }
     }
   
-    // Привязываем обработчики событий
-    loginBtn.addEventListener('click', loginWithGithub);
+    githubLoginBtn.addEventListener('click', loginWithGithub);
+    googleLoginBtn.addEventListener('click', loginWithGoogle);
     logoutBtn.addEventListener('click', logout);
   </script>
 </body>
